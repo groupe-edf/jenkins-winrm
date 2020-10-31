@@ -1,0 +1,83 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.jenkins-ci.plugins</groupId>
+    <artifactId>plugin</artifactId>
+    <version>4.2</version>
+    <relativePath />
+  </parent>
+
+
+  <artifactId>jenkins-winrm</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>hpi</packaging>
+
+  <name>Jenkins WinRm</name>
+
+  <!-- FIXME change it to the project's website -->
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <spotbugs.failOnError>false</spotbugs.failOnError>
+    <mock-server.version>5.10.0</mock-server.version>
+    <slf4jVersion>1.7.26</slf4jVersion>
+    <jenkins.version>2.235.5</jenkins.version>
+    <java.level>8</java.level>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.jenkins.tools.bom</groupId>
+        <artifactId>bom-2.235.x</artifactId>
+        <version>12-SNAPSHOT</version>
+        <!-- <scope>import</scope> -->
+        <type>pom</type>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <!-- <dependency> -->
+    <!-- <groupId>com.aestasit.infrastructure.winrm</groupId> -->
+    <!-- <artifactId>groovy-winrm-client</artifactId> -->
+    <!-- <version>0.6</version> -->
+    <!-- </dependency> -->
+    <dependency>
+      <groupId>org.hamcrest</groupId>
+      <artifactId>hamcrest-core</artifactId>
+      <version>2.2</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
+      <version>4.5.13</version>
+    </dependency>
+    <!-- <dependency> -->
+    <!-- <groupId>io.cloudsoft.windows</groupId> -->
+    <!-- <artifactId>winrm4j</artifactId> -->
+    <!-- <version>0.9.0</version> -->
+    <!-- </dependency> -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.30</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+      <version>1.7.30</version>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <plugins>
+    </plugins>
+  </build>
+</project>
