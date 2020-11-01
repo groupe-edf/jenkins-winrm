@@ -2,24 +2,47 @@ package fr.edf.jenkins.plugins.windows.winrm
 
 import org.apache.http.client.config.AuthSchemes
 
+/**
+ * Allow Jenkins to launch OpenShell commands on a windows remote machine
+ * @author Mathieu Delrocq
+ *
+ */
 class WinRMTool {
-    
-    static final String PROTOCOL_HTTP = 'http'
-    static final String PROTOCOL_HTTPS = 'https'
 
+    public static final String PROTOCOL_HTTP = 'http'
+    public static final String PROTOCOL_HTTPS = 'https'
+
+    /** host name or ip adress. */
     String host
+    /** username to connect  with. */
     String user
+    /** password associated to the user. */
     String password
+    /** @see AuthSchemes. */
     String authSheme
+    /** windos domain of the machine (optional value for ntlm authentication). */
     String domain
+    /** name of the windows machine (optional value for ntlm authentication). */
     String workstation
+    /** "true" to ignore https certificate error. */
     boolean ignoreCertificateError
+    /** "http" or "https", usage of static constants recommended. */
     String protocol
 
+    /**
+     *  Open a shell on the remote machine.
+     * @return Shell ID
+     */
     String openShell() {
     }
 
-    String executeCommand() {
+    /**
+     * Execute a command on the remote machine. <br/>
+     * A Shell must be opened
+     * @return result output
+     * @throws WinRMException with code and message if an error occured
+     */
+    String executeCommand() throws WinRMException {
     }
 
     /**
