@@ -10,6 +10,12 @@ import org.ietf.jgss.GSSManager
 import org.ietf.jgss.GSSName
 import org.ietf.jgss.Oid
 
+/**
+ *
+ * @author cloudsoft
+ * @see https://github.com/cloudsoft/winrm4j
+ *
+ */
 class WsmanSPNegoScheme extends SPNegoScheme {
 
     WsmanSPNegoScheme(final boolean stripPort, final boolean useCanonicalHostname) {

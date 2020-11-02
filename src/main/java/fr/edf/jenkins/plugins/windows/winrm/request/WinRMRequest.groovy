@@ -16,6 +16,12 @@
 
 package fr.edf.jenkins.plugins.windows.winrm.request
 
+/**
+ * Base request class.
+ *
+ * @author Sergey Korenko
+ * @author Mathieu Delrocq
+ */
 abstract class WinRMRequest {
 
     /// Constants used during composing WinRM request.

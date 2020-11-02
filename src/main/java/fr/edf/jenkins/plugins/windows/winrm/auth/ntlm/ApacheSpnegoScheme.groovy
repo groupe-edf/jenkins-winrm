@@ -8,6 +8,12 @@ import org.apache.http.client.config.AuthSchemes
 import org.apache.http.impl.auth.NTLMScheme
 import org.apache.http.message.BasicHeader
 
+/**
+ * 
+ * @author cloudsoft
+ * @see https://github.com/cloudsoft/winrm4j
+ *
+ */
 class ApacheSpnegoScheme extends NTLMScheme{
 
     @Override
