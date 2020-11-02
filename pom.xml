@@ -42,11 +42,6 @@
   </dependencyManagement>
 
   <dependencies>
-    <!-- <dependency> -->
-    <!-- <groupId>com.aestasit.infrastructure.winrm</groupId> -->
-    <!-- <artifactId>groovy-winrm-client</artifactId> -->
-    <!-- <version>0.6</version> -->
-    <!-- </dependency> -->
     <dependency>
       <groupId>org.hamcrest</groupId>
       <artifactId>hamcrest-core</artifactId>
@@ -58,11 +53,6 @@
       <artifactId>httpclient</artifactId>
       <version>4.5.13</version>
     </dependency>
-    <!-- <dependency> -->
-    <!-- <groupId>io.cloudsoft.windows</groupId> -->
-    <!-- <artifactId>winrm4j</artifactId> -->
-    <!-- <version>0.9.0</version> -->
-    <!-- </dependency> -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
@@ -78,6 +68,27 @@
 
   <build>
     <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <!-- 2.8.0-01 and later require maven-compiler-plugin 3.1 or higher -->
+        <configuration>
+          <compilerId>groovy-eclipse-compiler</compilerId>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-eclipse-compiler</artifactId>
+            <version>2.9.2-01</version>
+          </dependency>
+          <!-- for 2.8.0-01 and later you must have an explicit dependency 
+            on groovy-eclipse-batch -->
+          <dependency>
+            <groupId>org.codehaus.groovy</groupId>
+            <artifactId>groovy-eclipse-batch</artifactId>
+            <version>2.5.7-01</version>
+          </dependency>
+        </dependencies>
+      </plugin>
     </plugins>
   </build>
 </project>
