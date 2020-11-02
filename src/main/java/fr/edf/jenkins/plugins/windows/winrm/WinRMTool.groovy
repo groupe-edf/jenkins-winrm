@@ -41,6 +41,8 @@ import org.apache.http.protocol.HttpContext
 import fr.edf.jenkins.plugins.windows.winrm.auth.ntlm.SpNegoNTLMSchemeFactory
 import fr.edf.jenkins.plugins.windows.winrm.auth.spnego.WsmanSPNegoSchemeFactory
 import fr.edf.jenkins.plugins.windows.winrm.command.CommandOutput
+import fr.edf.jenkins.plugins.windows.winrm.request.CleanupCommandRequest
+import fr.edf.jenkins.plugins.windows.winrm.request.DeleteShellRequest
 import fr.edf.jenkins.plugins.windows.winrm.request.ExecuteCommandRequest
 import fr.edf.jenkins.plugins.windows.winrm.request.GetCommandOutputRequest
 import fr.edf.jenkins.plugins.windows.winrm.request.OpenShellRequest
@@ -84,7 +86,17 @@ class WinRMTool {
     String lastCommandId
     HttpClient httpClient
 
-
+    /**
+     * Default constructor for {@link WinRMTool}
+     * @param address : ip adress or hostname
+     * @param port : port to connect
+     * @param username : username used for the connection
+     * @param password : password of the user
+     * @param authSheme : {@link AuthSchemes} used to connect, only NTLM or BASIC are allowed in this client
+     * @param useHttps : <code>true</code> if the connection use https, <code>false</code> elsewhere
+     * @param disableCertificateChecks : <code>true</code> if you want to ignore certificate check
+     * @param commandTimeout : delay before the command have to respond
+     */
     WinRMTool(String address, int port, String username, String password, String authSheme, boolean useHttps,
     boolean disableCertificateChecks, Integer commandTimeout) {
         this.url = buildUrl(useHttps?PROTOCOL_HTTPS:PROTOCOL_HTTP,address,port)
@@ -97,8 +109,10 @@ class WinRMTool {
     }
 
     /**
-     *  Open a shell on the remote machine.
+     * Open a shell on the remote machine.
+     * 
      * @return Shell ID
+     * @throws {@link WinRMException}
      */
     String openShell() throws WinRMException {
         HttpClient httpClient = getHttpClient()
@@ -135,8 +149,9 @@ class WinRMTool {
     /**
      * Compile PS and call executeCommand. <br/>
      * A Shell must be opened
+     * 
      * @return commandId
-     * @throws WinRMException with code and message if an error occured
+     * @throws {@link WinRMException} with code and message if an error occured
      */
     String executePSCommand(String shellId = lastShellId, String psCommand, String[] args = []) throws WinRMException {
         return executeCommand(shellId, compilePs(psCommand), args)
@@ -145,8 +160,9 @@ class WinRMTool {
     /**
      * Execute a command on the remote machine. <br/>
      * A Shell must be opened
+     * 
      * @return commandId
-     * @throws WinRMException with code and message if an error occured
+     * @throws {@link WinRMException} with code and message if an error occured
      */
     String executeCommand(String shellId = lastShellId, String commandLine, String[] args = []) throws WinRMException {
         if(StringUtils.isEmpty(shellId)) {
@@ -179,15 +195,18 @@ class WinRMTool {
             responseCode,
             "Cannot retrieve the command id in the given response : ") + responseBody)
         }
+        this.lastCommandId = commandId
         return commandId
     }
 
     /**
-     * Return the output for the given command id
+     * Return the output for the given command id <br/>
+     * A command must be launched befrore call this method
+     * 
      * @param shellId
      * @param commandId
-     * @return command output
-     * @throws WinRMException
+     * @return {@link CommandOutput}
+     * @throws {@link WinRMException}
      */
     CommandOutput getCommandOutput(String shellId = lastShellId, String commandId = lastCommandId) throws WinRMException {
         if(StringUtils.isEmpty(commandId)) {
@@ -202,7 +221,7 @@ class WinRMTool {
         if(!sucessStatus.contains(responseCode)) {
             throw new WinRMException(String.format(
             WinRMException.FORMATTED_MESSAGE,
-            "ExecuteCommand",
+            "GetCommandOutput",
             status.getProtocolVersion(),
             responseCode,
             status.getReasonPhrase()))
@@ -236,27 +255,66 @@ class WinRMTool {
         }
     }
 
+    /**
+     * Terminate the command with the given id <br/>
+     * A command must be launch before call this method
+     * 
+     * @param shellId
+     * @param commandId
+     * @throws {@link WinRMException}
+     */
     void cleanupCommand(String shellId = lastShellId, String commandId = lastCommandId) throws WinRMException {
         if(StringUtils.isEmpty(commandId)) {
             throw new WinRMException("No command was executed")
         }
         HttpClient httpClient = getHttpClient()
+        HttpPost httpPost = buildHttpPostRequest(new CleanupCommandRequest(url, shellId, commandId, timeout))
+        HttpContext context = buildHttpContext()
+        HttpResponse response = httpClient.execute(httpPost, context)
+        StatusLine status = response.getStatusLine()
+        int responseCode = status.getStatusCode()
+        if(!sucessStatus.contains(responseCode)) {
+            throw new WinRMException(String.format(
+            WinRMException.FORMATTED_MESSAGE,
+            "CleanupCommand",
+            status.getProtocolVersion(),
+            responseCode,
+            status.getReasonPhrase()))
+        }
+        LOGGER.log(Level.FINEST, "RESPONSE BODY :" + response.getEntity().getContent().text)
     }
 
     /**
      * Close the shell on the remote machine
+     * 
      * @param shellId
-     * @throws WinRMException
+     * @throws {@link WinRMException}
      */
     void deleteShellRequest(String shellId = lastShellId) throws WinRMException {
         if(StringUtils.isEmpty(shellId)) {
             throw new WinRMException("There is no shell Id")
         }
+        HttpClient httpClient = getHttpClient()
+        HttpPost httpPost = buildHttpPostRequest(new DeleteShellRequest(url, shellId, timeout))
+        HttpContext context = buildHttpContext()
+        HttpResponse response = httpClient.execute(httpPost, context)
+        StatusLine status = response.getStatusLine()
+        int responseCode = status.getStatusCode()
+        if(!sucessStatus.contains(responseCode)) {
+            throw new WinRMException(String.format(
+            WinRMException.FORMATTED_MESSAGE,
+            "DeleteShellRequest",
+            status.getProtocolVersion(),
+            responseCode,
+            status.getReasonPhrase()))
+        }
+        LOGGER.log(Level.FINEST, "RESPONSE BODY :" + response.getEntity().getContent().text)
     }
 
     /**
      * Build the HttpClient or return the existing one
-     * @return HttpClient
+     * 
+     * @return {@link HttpClient}
      */
     private HttpClient getHttpClient() {
         if (null == httpClient) {
@@ -274,6 +332,12 @@ class WinRMTool {
         return httpClient
     }
 
+    /**
+     * Build the http post request
+     * 
+     * @param request : type of request
+     * @return {@link HttpPost}
+     */
     private HttpPost buildHttpPostRequest(WinRMRequest request) {
         // Init HttpPost
         HttpPost httpPost = new HttpPost(url.toURI())
@@ -292,7 +356,8 @@ class WinRMTool {
 
     /**
      * Build a TrustManager wich accept any certificate
-     * @return sslContext
+     * 
+     * @return {@link SSLContext}
      */
     private SSLContext buildIgnoreCertificateErrorContext() {
         def nullTrustManager = [
@@ -310,9 +375,9 @@ class WinRMTool {
 
     /**
      * Return the HostNameVerifier of the remote machine.<br/>
-     * Do not verify if empty
+     * 
      * @param String
-     * @return
+     * @return {@link HostnameVerifier}
      */
     private HostnameVerifier buildIgnoreHostnameVerifier() {
         def nullHostnameVerifier = [
@@ -325,8 +390,9 @@ class WinRMTool {
 
     /**
      * Build and return AuthShemeRegistry
+     * 
      * @param authenticationScheme
-     * @return authSchemeRegistry
+     * @return {@link Registry<AuthSchemeProvider>}
      */
     private Registry<AuthSchemeProvider> buildAuthShemeRegistry(String authenticationScheme) {
         Registry<AuthSchemeProvider> authSchemeRegistry = RegistryBuilder.<AuthSchemeProvider>create()
@@ -338,7 +404,13 @@ class WinRMTool {
         return authSchemeRegistry
     }
 
-    private HttpContext buildHttpContext() throws UnsupportedOperationException {
+    /**
+     * Build and return the http context with the authentication
+     * 
+     * @return {@link HttpContext}
+     * @throws {@link WinRMException}
+     */
+    private HttpContext buildHttpContext() throws WinRMException {
         HttpContext localContext = new BasicHttpContext();
         CredentialsProvider credsProvider = new BasicCredentialsProvider()
         switch(authSheme) {
@@ -351,7 +423,7 @@ class WinRMTool {
                 new NTCredentials(username, password, workstation, domain))
                 break
             default:
-                throw new UnsupportedOperationException("No such authentication scheme " + authSheme)
+                throw new WinRMException("No such authentication scheme " + authSheme)
         }
         localContext.setAttribute(HttpClientContext.CREDS_PROVIDER, credsProvider)
         return localContext
@@ -359,6 +431,7 @@ class WinRMTool {
 
     /**
      * Compile PowerShell script
+     * 
      * @param psScript
      * @return encoded PowerShell
      */
@@ -369,12 +442,12 @@ class WinRMTool {
     }
 
     /**
-     * Creates <code>URL</code> object to connect to remote host by WinRM
+     * Creates {@link URL} object to connect to remote host by WinRM
      *
      * @param protocol http or https
      * @param address remote host name or ip address
      * @param port port to remote host connection
-     * @return created URL object
+     * @return created {@link URL} object
      */
     private URL buildUrl(String protocol, String address, int port) {
         try {
