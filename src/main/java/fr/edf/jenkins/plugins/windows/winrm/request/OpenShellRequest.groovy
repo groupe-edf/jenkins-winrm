@@ -22,6 +22,7 @@ import groovy.xml.MarkupBuilder
  * The class represents request to open WinRM shell.
  *
  * @author Sergey Korenko
+ * @see https://github.com/sshoogr/groovy-winrm-client
  */
 class OpenShellRequest extends WinRMRequest {
 

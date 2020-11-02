@@ -22,6 +22,7 @@ import groovy.xml.MarkupBuilder
  * Request to closed previously open shell.
  *
  * @author Sergey Korenko
+ * @see https://github.com/sshoogr/groovy-winrm-client
  */
 class DeleteShellRequest extends WinRMRequest {
 

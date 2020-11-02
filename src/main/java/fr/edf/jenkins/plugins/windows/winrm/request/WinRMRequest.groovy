@@ -21,6 +21,8 @@ package fr.edf.jenkins.plugins.windows.winrm.request
  *
  * @author Sergey Korenko
  * @author Mathieu Delrocq
+ * 
+ * @see https://github.com/sshoogr/groovy-winrm-client
  */
 abstract class WinRMRequest {
 

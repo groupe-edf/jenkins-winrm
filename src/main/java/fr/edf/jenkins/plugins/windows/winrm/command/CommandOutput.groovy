@@ -25,6 +25,7 @@ package fr.edf.jenkins.plugins.windows.winrm.command
  *
  * @author Andrey Adamovich
  * @author Mathieu Delrocq
+ * @see https://github.com/sshoogr/groovy-winrm-client
  */
 class CommandOutput {
 

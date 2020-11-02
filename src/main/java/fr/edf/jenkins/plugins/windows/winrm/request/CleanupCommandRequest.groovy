@@ -22,6 +22,7 @@ import groovy.xml.MarkupBuilder
  * Request to free resources after command execution.
  *
  * @author Sergey Korenko
+ * @see https://github.com/sshoogr/groovy-winrm-client
  */
 class CleanupCommandRequest extends WinRMRequest {
 

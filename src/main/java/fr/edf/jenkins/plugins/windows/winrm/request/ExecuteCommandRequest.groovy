@@ -22,6 +22,7 @@ import groovy.xml.MarkupBuilder
  * Request that starts remote command execution.
  *
  * @author Sergey Korenko
+ * @see https://github.com/sshoogr/groovy-winrm-client
  */
 class ExecuteCommandRequest extends WinRMRequest {
 

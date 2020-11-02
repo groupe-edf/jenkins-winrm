@@ -22,6 +22,7 @@ import groovy.xml.MarkupBuilder
  * Request to get command output.
  *
  * @author Sergey Korenko
+ * @see https://github.com/sshoogr/groovy-winrm-client
  */
 class GetCommandOutputRequest extends WinRMRequest {
 
