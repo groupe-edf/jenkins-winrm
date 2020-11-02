@@ -1,6 +1,9 @@
 # jenkins-winrm
 Dev tool to execute command on a remote Windows machine with Jenkins using WinRM specification.
 
+## Goal
+Build a Winrm client working with NTLM authentication and compatible with Jenkins
+
 ## Usage
 An usage example can be found in this file : **[JenkinsWinRMUsageTest](https://github.com/mat1e/jenkins-winrm/blob/main/src/test/java/org/jenkinsci/plugins/JenkinsWinRMUsageTest.groovy)**
  
