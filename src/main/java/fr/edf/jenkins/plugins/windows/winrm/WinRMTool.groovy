@@ -111,7 +111,7 @@ class WinRMTool {
      * @param authSheme : {@link AuthSchemes} used to connect, only NTLM or BASIC are allowed in this client
      * @param useHttps : <code>true</code> if the connection use https, <code>false</code> elsewhere
      * @param disableCertificateChecks : <code>true</code> if you want to ignore certificate check
-     * @param commandTimeout : delay before the command have to respond
+     * @param timeout : delay before the command have to respond
      */
     WinRMTool(String address, int port, String username, String password, String authSheme, boolean useHttps,
     boolean disableCertificateChecks, Integer commandTimeout) {
