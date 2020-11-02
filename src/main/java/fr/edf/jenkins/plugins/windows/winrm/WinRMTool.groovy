@@ -134,7 +134,7 @@ class WinRMTool {
         HttpClient httpClient = getHttpClient()
         HttpPost httpPost = buildHttpPostRequest(new OpenShellRequest(url, timeout))
         HttpContext context = buildHttpContext()
-        HttpResponse response = httpClient.execute(httpPost, context)
+        HttpResponse response = performRequest(httpPost, context)
         StatusLine status = response.getStatusLine()
         int responseCode = status.getStatusCode()
         if(!sucessStatus.contains(responseCode)) {
@@ -146,7 +146,7 @@ class WinRMTool {
             status.getReasonPhrase()))
         }
         HttpEntity responseEntity = response.getEntity();
-        String responseBody = responseEntity.getContent().text
+        String responseBody = responseEntity?.getContent()?.text
         LOGGER.log(Level.FINEST, "RESPONSE BODY :" + responseBody)
         GPathResult results = new XmlSlurper().parseText(responseBody)
         String shellId = results?.'*:Body'?.'*:Shell'?.'*:ShellId'
@@ -167,7 +167,7 @@ class WinRMTool {
      * A Shell must be opened
      * 
      * @return commandId
-     * @throws {@link WinRMException} with code and message if an error occured
+     * @throws WinRMException with code and message if an error occured
      */
     String executePSCommand(String shellId = lastShellId, String psCommand, String[] args = []) throws WinRMException {
         return executeCommand(shellId, compilePs(psCommand), args)
@@ -178,7 +178,7 @@ class WinRMTool {
      * A Shell must be opened
      * 
      * @return commandId
-     * @throws {@link WinRMException} with code and message if an error occured
+     * @throws WinRMException with code and message if an error occured
      */
     String executeCommand(String shellId = lastShellId, String commandLine, String[] args = []) throws WinRMException {
         if(StringUtils.isEmpty(shellId)) {
@@ -187,7 +187,7 @@ class WinRMTool {
         HttpClient httpClient = getHttpClient()
         HttpPost httpPost = buildHttpPostRequest(new ExecuteCommandRequest(url, shellId, commandLine, args, timeout))
         HttpContext context = buildHttpContext()
-        HttpResponse response = httpClient.execute(httpPost, context)
+        HttpResponse response = performRequest(httpPost, context)
         StatusLine status = response.getStatusLine()
         int responseCode = status.getStatusCode()
         if(!sucessStatus.contains(responseCode)) {
@@ -222,7 +222,7 @@ class WinRMTool {
      * @param shellId
      * @param commandId
      * @return {@link CommandOutput}
-     * @throws {@link WinRMException}
+     * @throws WinRMException with code and message if an error occured
      */
     CommandOutput getCommandOutput(String shellId = lastShellId, String commandId = lastCommandId) throws WinRMException {
         if(StringUtils.isEmpty(commandId)) {
@@ -231,7 +231,7 @@ class WinRMTool {
         HttpClient httpClient = getHttpClient()
         HttpPost httpPost = buildHttpPostRequest(new GetCommandOutputRequest(url, shellId, commandId, timeout))
         HttpContext context = buildHttpContext()
-        HttpResponse response = httpClient.execute(httpPost, context)
+        HttpResponse response = performRequest(httpPost, context)
         StatusLine status = response.getStatusLine()
         int responseCode = status.getStatusCode()
         if(!sucessStatus.contains(responseCode)) {
@@ -277,7 +277,7 @@ class WinRMTool {
      * 
      * @param shellId
      * @param commandId
-     * @throws {@link WinRMException}
+     * @throws WinRMException with code and message if an error occured
      */
     void cleanupCommand(String shellId = lastShellId, String commandId = lastCommandId) throws WinRMException {
         if(StringUtils.isEmpty(commandId)) {
@@ -286,7 +286,7 @@ class WinRMTool {
         HttpClient httpClient = getHttpClient()
         HttpPost httpPost = buildHttpPostRequest(new CleanupCommandRequest(url, shellId, commandId, timeout))
         HttpContext context = buildHttpContext()
-        HttpResponse response = httpClient.execute(httpPost, context)
+        HttpResponse response = performRequest(httpPost, context)
         StatusLine status = response.getStatusLine()
         int responseCode = status.getStatusCode()
         if(!sucessStatus.contains(responseCode)) {
@@ -304,7 +304,7 @@ class WinRMTool {
      * Close the shell on the remote machine
      * 
      * @param shellId
-     * @throws {@link WinRMException}
+     * @throws WinRMException with code and message if an error occured
      */
     void deleteShellRequest(String shellId = lastShellId) throws WinRMException {
         if(StringUtils.isEmpty(shellId)) {
@@ -313,7 +313,7 @@ class WinRMTool {
         HttpClient httpClient = getHttpClient()
         HttpPost httpPost = buildHttpPostRequest(new DeleteShellRequest(url, shellId, timeout))
         HttpContext context = buildHttpContext()
-        HttpResponse response = httpClient.execute(httpPost, context)
+        HttpResponse response = performRequest(httpPost, context)
         StatusLine status = response.getStatusLine()
         int responseCode = status.getStatusCode()
         if(!sucessStatus.contains(responseCode)) {
@@ -325,6 +325,24 @@ class WinRMTool {
             status.getReasonPhrase()))
         }
         LOGGER.log(Level.FINEST, "RESPONSE BODY :" + response.getEntity().getContent().text)
+    }
+
+    /**
+     * Perform the request with exception management
+     * 
+     * @param httpPost
+     * @param context
+     * @return {@link HttpResponse}
+     * @throws WinRMException
+     */
+    private HttpResponse performRequest(HttpPost httpPost, HttpContext context) throws WinRMException {
+        HttpResponse response = null
+        try {
+            response = httpClient.execute(httpPost, context)
+        } catch(Exception e) {
+            throw new WinRMException("Cannot perform request due to unexpected exception", e)
+        }
+        return response
     }
 
     /**
@@ -357,16 +375,20 @@ class WinRMTool {
     private HttpPost buildHttpPostRequest(WinRMRequest request) {
         // Init HttpPost
         HttpPost httpPost = new HttpPost(url.toURI())
-        // Build request entity
-        String requestString = request.toString()
-        LOGGER.log(Level.FINEST, "REQUEST BODY :" + requestString)
-        StringEntity entity = new StringEntity(requestString)
-        Header contentTypeHeader = new BasicHeader(HTTP.CONTENT_TYPE, SOAP_REQUEST_CONTENT_TYPE)
-        entity.setContentType(contentTypeHeader)
-        httpPost.setEntity(entity)
-        // Request config
-        RequestConfig.Builder configBuilder = new RequestConfig.Builder()
-        httpPost.setConfig(configBuilder.build())
+        try {
+            // Build request entity
+            String requestString = request.toString()
+            LOGGER.log(Level.FINEST, "REQUEST BODY :" + requestString)
+            StringEntity entity = new StringEntity(requestString)
+            Header contentTypeHeader = new BasicHeader(HTTP.CONTENT_TYPE, SOAP_REQUEST_CONTENT_TYPE)
+            entity.setContentType(contentTypeHeader)
+            httpPost.setEntity(entity)
+            // Request config
+            RequestConfig.Builder configBuilder = new RequestConfig.Builder()
+            httpPost.setConfig(configBuilder.build())
+        }catch (Exception e) {
+            throw new WinRMException("Cannot build HttpPost request due to unexpected exception", e)
+        }
         return httpPost
     }
 
@@ -376,6 +398,8 @@ class WinRMTool {
      * @return {@link SSLContext}
      */
     private SSLContext buildIgnoreCertificateErrorContext() {
+        SSLContext sslContext = null
+
         def nullTrustManager = [
             checkClientTrusted: { chain, authType ->  },
             checkServerTrusted: { chain, authType ->  },
@@ -384,8 +408,12 @@ class WinRMTool {
             }
         ]
 
-        SSLContext sslContext = SSLContext.getInstance(TLS)
-        sslContext.init(null, [nullTrustManager as X509TrustManager] as TrustManager[], new SecureRandom())
+        try {
+            sslContext = SSLContext.getInstance(TLS)
+            sslContext.init(null, [nullTrustManager as X509TrustManager] as TrustManager[], new SecureRandom())
+        }catch(Exception e) {
+            throw new WinRMException("Cannot init SSLContext due to unexpected exception", e)
+        }
         return sslContext
     }
 
@@ -424,7 +452,7 @@ class WinRMTool {
      * Build and return the http context with the authentication
      * 
      * @return {@link HttpContext}
-     * @throws {@link WinRMException}
+     * @throws WinRMException if invalid authentication scheme
      */
     private HttpContext buildHttpContext() throws WinRMException {
         HttpContext localContext = new BasicHttpContext();
@@ -464,8 +492,9 @@ class WinRMTool {
      * @param address remote host name or ip address
      * @param port port to remote host connection
      * @return created {@link URL} object
+     * @throws WinRMException if invalid WinRM URL
      */
-    private URL buildUrl(String protocol, String address, int port) {
+    private URL buildUrl(String protocol, String address, int port) throws WinRMException {
         try {
             new URL(protocol, address, port, WSMAN_ROOT_URI)
         } catch (MalformedURLException e) {
