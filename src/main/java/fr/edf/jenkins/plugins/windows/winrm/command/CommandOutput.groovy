@@ -24,6 +24,7 @@ package fr.edf.jenkins.plugins.windows.winrm.command
  * 3. error output in case of error occurred during command execution
  *
  * @author Andrey Adamovich
+ * @author Mathieu Delrocq
  */
 class CommandOutput {
 

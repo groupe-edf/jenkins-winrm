@@ -18,6 +18,11 @@ package fr.edf.jenkins.plugins.windows.winrm.request
 
 import groovy.xml.MarkupBuilder
 
+/**
+ * The class represents request to open WinRM shell.
+ *
+ * @author Sergey Korenko
+ */
 class OpenShellRequest extends WinRMRequest {
 
     OpenShellRequest(URL toAddress, int timeout = 60) {
