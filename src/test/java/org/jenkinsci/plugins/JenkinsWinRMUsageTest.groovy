@@ -6,6 +6,11 @@ import org.junit.Test
 import fr.edf.jenkins.plugins.windows.winrm.WinRMTool
 import fr.edf.jenkins.plugins.windows.winrm.command.CommandOutput
 
+/**
+ * Usage example of jenkins-winrm
+ * @author Mathieu Delrocq
+ *
+ */
 class JenkinsWinRMUsageTest {
 
     @Test

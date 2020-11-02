@@ -1,16 +1,21 @@
 package org.jenkinsci.plugins;
 
 //import org.apache.http.client.config.AuthSchemes;
-//import org.junit.Test;
+import org.junit.Test;
 //
 //import io.cloudsoft.winrm4j.client.WinRmClientContext;
 //import io.cloudsoft.winrm4j.winrm.WinRmTool;
 //import io.cloudsoft.winrm4j.winrm.WinRmToolResponse;
 
+/**
+ * Example with Winrm4j
+ * @author Mathieu Delrocq
+ *
+ */
 public class Winrm4jTest {
 
-//    @Test
-//    public void test_winrm4j() {
+    @Test
+    public void test_winrm4j() {
 //        System.setProperty("io.cloudsoft.winrm4j", "DEBUG");
 //        WinRmClientContext context = WinRmClientContext.newInstance();
 //
@@ -32,5 +37,5 @@ public class Winrm4jTest {
 //        // response =tool.executePs("echo hi");
 //        // System.out.println(response.getStdOut());
 //        context.shutdown();
-//    }
+    }
 }
