@@ -51,4 +51,6 @@ abstract class WinRMRequest {
       "uuid:" + UUID.randomUUID().toString().toUpperCase()
     }
 
+    @Override
+    abstract String toString()
 }
