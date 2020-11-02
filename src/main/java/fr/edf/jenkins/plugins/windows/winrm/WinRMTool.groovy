@@ -40,7 +40,9 @@ import org.apache.http.protocol.HttpContext
 
 import fr.edf.jenkins.plugins.windows.winrm.auth.ntlm.SpNegoNTLMSchemeFactory
 import fr.edf.jenkins.plugins.windows.winrm.auth.spnego.WsmanSPNegoSchemeFactory
+import fr.edf.jenkins.plugins.windows.winrm.command.CommandOutput
 import fr.edf.jenkins.plugins.windows.winrm.request.ExecuteCommandRequest
+import fr.edf.jenkins.plugins.windows.winrm.request.GetCommandOutputRequest
 import fr.edf.jenkins.plugins.windows.winrm.request.OpenShellRequest
 import fr.edf.jenkins.plugins.windows.winrm.request.WinRMRequest
 import groovy.util.slurpersupport.GPathResult
@@ -53,7 +55,6 @@ import groovy.util.slurpersupport.GPathResult
 class WinRMTool {
 
     static final Logger LOGGER = Logger.getLogger(WinRMTool.name)
-
     public static final String PROTOCOL_HTTP = "http"
     public static final String PROTOCOL_HTTPS = "https"
     private static final String SOAP_REQUEST_CONTENT_TYPE = "application/soap+xml; charset=UTF-8"
@@ -76,7 +77,7 @@ class WinRMTool {
     /** "http" or "https", usage of static constants recommended. */
     boolean useHttps
     /** timout of the command */
-    Integer commandTimeout = 60
+    Integer timeout = 60
 
     URL url
     String lastShellId
@@ -84,14 +85,15 @@ class WinRMTool {
     HttpClient httpClient
 
 
-    WinRMTool(String address, String port, String username, String password, boolean useHttps,
+    WinRMTool(String address, int port, String username, String password, String authSheme, boolean useHttps,
     boolean disableCertificateChecks, Integer commandTimeout) {
         this.url = buildUrl(useHttps?PROTOCOL_HTTPS:PROTOCOL_HTTP,address,port)
         this.username = username
         this.password = password
+        this.authSheme = authSheme
         this.useHttps = useHttps
         this.disableCertificateChecks = disableCertificateChecks
-        this.commandTimeout = commandTimeout
+        this.timeout = commandTimeout
     }
 
     /**
@@ -100,7 +102,7 @@ class WinRMTool {
      */
     String openShell() throws WinRMException {
         HttpClient httpClient = getHttpClient()
-        HttpPost httpPost = buildHttpPostRequest(new OpenShellRequest(url, commandTimeout))
+        HttpPost httpPost = buildHttpPostRequest(new OpenShellRequest(url, timeout))
         HttpContext context = buildHttpContext()
         HttpResponse response = httpClient.execute(httpPost, context)
         StatusLine status = response.getStatusLine()
@@ -151,7 +153,7 @@ class WinRMTool {
             throw new WinRMException("Call openShell() before execute command")
         }
         HttpClient httpClient = getHttpClient()
-        HttpPost httpPost = buildHttpPostRequest(new ExecuteCommandRequest(url, shellId, commandLine, args, commandTimeout))
+        HttpPost httpPost = buildHttpPostRequest(new ExecuteCommandRequest(url, shellId, commandLine, args, timeout))
         HttpContext context = buildHttpContext()
         HttpResponse response = httpClient.execute(httpPost, context)
         StatusLine status = response.getStatusLine()
@@ -168,14 +170,14 @@ class WinRMTool {
         String responseBody = responseEntity.getContent().text
         LOGGER.log(Level.FINEST, "RESPONSE BODY :" + responseBody)
         GPathResult results = new XmlSlurper().parseText(responseBody)
-        String commandId = results?.'*:Body'?.'*:Receive'?.'*:DesiredStream'?.@'*:CommandId'
+        String commandId = results?.'*:Body'?.'*:CommandResponse'?.'*:CommandId'
         if(StringUtils.isEmpty(commandId)) {
             throw new WinRMException(String.format(
             WinRMException.FORMATTED_MESSAGE,
             "ExecuteCommand",
             status.getProtocolVersion(),
             responseCode,
-            "Cannot retrieve the command id in the given response :" + responseBody))
+            "Cannot retrieve the command id in the given response : ") + responseBody)
         }
         return commandId
     }
@@ -187,14 +189,57 @@ class WinRMTool {
      * @return command output
      * @throws WinRMException
      */
-    String getCommandOutput(String shellId = lastShellId, String commandId = lastCommandId) throws WinRMException {
+    CommandOutput getCommandOutput(String shellId = lastShellId, String commandId = lastCommandId) throws WinRMException {
         if(StringUtils.isEmpty(commandId)) {
             throw new WinRMException("No command was executed")
         }
         HttpClient httpClient = getHttpClient()
+        HttpPost httpPost = buildHttpPostRequest(new GetCommandOutputRequest(url, shellId, commandId, timeout))
+        HttpContext context = buildHttpContext()
+        HttpResponse response = httpClient.execute(httpPost, context)
+        StatusLine status = response.getStatusLine()
+        int responseCode = status.getStatusCode()
+        if(!sucessStatus.contains(responseCode)) {
+            throw new WinRMException(String.format(
+            WinRMException.FORMATTED_MESSAGE,
+            "ExecuteCommand",
+            status.getProtocolVersion(),
+            responseCode,
+            status.getReasonPhrase()))
+        }
+        HttpEntity responseEntity = response.getEntity();
+        String responseBody = responseEntity.getContent().text
+        LOGGER.log(Level.FINEST, "RESPONSE BODY :" + responseBody)
+        GPathResult results = new XmlSlurper().parseText(responseBody)
+
+        String output = ''
+        String error = ''
+
+        results?.'*:Body'?.'*:ReceiveResponse'?.'*:Stream'?.findAll {
+            it.@Name == 'stdout' && it.@CommandId == commandId
+        }?.each { output += new String(it.toString()?.decodeBase64()) }
+
+        results?.'*:Body'?.'*:ReceiveResponse'?.'*:Stream'?.findAll {
+            it.@Name == 'stderr' && it.@CommandId == commandId
+        }?.each { error += new String(it.toString()?.decodeBase64()) }
+
+        if (results?.'*:Body'?.'*:ReceiveResponse'?.'*:CommandState'?.find {
+            it.@CommandId == commandId && it.@State == 'http://schemas.microsoft.com/wbem/wsman/1/windows/shell/CommandState/Done'
+        }) {
+            Integer exitStatus = results?.'*:Body'?.'*:ReceiveResponse'?.'*:CommandState'?.'*:ExitCode'?.text()?.toInteger()
+            LOGGER.log(Level.FINEST, "exitStatus : " + exitStatus)
+            LOGGER.log(Level.FINEST, "commandOutput : " + output)
+            LOGGER.log(Level.FINEST, "errOutput : " + error)
+            return new CommandOutput(exitStatus, output, error)
+        } else {
+            return new CommandOutput(-1, output, CommandOutput.COMMAND_STILL_RUNNING)
+        }
     }
 
-    String cleanupCommand(String shellId = lastShellId, String commandId = lastCommandId) throws WinRMException {
+    void cleanupCommand(String shellId = lastShellId, String commandId = lastCommandId) throws WinRMException {
+        if(StringUtils.isEmpty(commandId)) {
+            throw new WinRMException("No command was executed")
+        }
         HttpClient httpClient = getHttpClient()
     }
 
@@ -204,6 +249,9 @@ class WinRMTool {
      * @throws WinRMException
      */
     void deleteShellRequest(String shellId = lastShellId) throws WinRMException {
+        if(StringUtils.isEmpty(shellId)) {
+            throw new WinRMException("There is no shell Id")
+        }
     }
 
     /**
@@ -316,7 +364,7 @@ class WinRMTool {
      */
     private String compilePs(String psScript) {
         byte[] cmd = psScript.getBytes(Charset.forName("UTF-16LE"))
-        String arg = javax.xml.bind.DatatypeConverter.printBase64Binary(cmd)
+        String arg = cmd.encodeBase64().toString()
         return "powershell -encodedcommand " + arg
     }
 
