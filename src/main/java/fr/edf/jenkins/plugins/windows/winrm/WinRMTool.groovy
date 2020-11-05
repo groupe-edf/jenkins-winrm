@@ -261,13 +261,13 @@ class WinRMTool {
         if (results?.'*:Body'?.'*:ReceiveResponse'?.'*:CommandState'?.find {
             it.@CommandId == commandId && it.@State == 'http://schemas.microsoft.com/wbem/wsman/1/windows/shell/CommandState/Done'
         }) {
-            Integer exitStatus = results?.'*:Body'?.'*:ReceiveResponse'?.'*:CommandState'?.'*:ExitCode'?.text()?.toInteger()
+            Long exitStatus = results?.'*:Body'?.'*:ReceiveResponse'?.'*:CommandState'?.'*:ExitCode'?.text()?.toLong()
             LOGGER.log(Level.FINEST, "exitStatus : " + exitStatus)
             LOGGER.log(Level.FINEST, "commandOutput : " + output)
             LOGGER.log(Level.FINEST, "errOutput : " + error)
             return new CommandOutput(exitStatus, output, error)
         } else {
-            return new CommandOutput(-1, output, CommandOutput.COMMAND_STILL_RUNNING)
+            return new CommandOutput(-1, output, error)
         }
     }
 
