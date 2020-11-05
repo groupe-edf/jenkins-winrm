@@ -23,7 +23,7 @@ package fr.edf.jenkins.plugins.windows.winrm
  */
 class WinRMException extends Exception {
     
-    public static final String FORMATTED_MESSAGE = "Error during %s command, protocol : %s, code : %s, description : %"
+    public static final String FORMATTED_MESSAGE = "Error during %s command, protocol : %s, code : %s, description : %s"
     
     private WinRMException() {
         // Hide default constructor
