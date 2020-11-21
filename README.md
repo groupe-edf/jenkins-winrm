@@ -7,7 +7,7 @@ See [4.7.1](https://docs.microsoft.com/en-us/openspecs/windows_protocols/ms-wsmv
 Build a Winrm client working with NTLM authentication and compatible with Jenkins
 
 ## Usage
-An usage example can be found in this file : **[JenkinsWinRMUsageTest](https://github.com/mat1e/jenkins-winrm/blob/main/src/test/java/org/jenkinsci/plugins/JenkinsWinRMUsageTest.groovy)**
+An usage example can be found in this file : **[JenkinsWinRMUsageTest](https://github.com/groupe-edf/jenkins-winrm/blob/main/src/test/java/org/jenkinsci/plugins/JenkinsWinRMUsageTest.groovy)**
  
 ## References
 This project contains code under Apache-2.0 License from :
